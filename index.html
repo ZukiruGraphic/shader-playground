@@ -1,0 +1,1896 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>3D & 2D Shader Playground</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+        }
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #111;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        #floating-toggle {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: rgba(20, 24, 30, 0.85);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            color: #ffffff;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 101;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+            transition: transform 0.1s ease;
+            pointer-events: auto;
+        }
+        #floating-toggle:active {
+            transform: scale(0.92);
+        }
+
+        /* Fully covering semi-transparent background for the shader editor overlay */
+        #shader-editor-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(10, 12, 16, 0.9);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            z-index: 300;
+            display: none;
+            flex-direction: column;
+            padding: 15px;
+            color: #fff;
+            pointer-events: auto;
+        }
+
+        .editor-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 10px;
+            z-index: 302;
+            pointer-events: auto;
+        }
+
+        .editor-tabs {
+            display: flex;
+            gap: 6px;
+            pointer-events: auto;
+        }
+
+        .editor-tab-btn {
+            background: rgba(20, 24, 30, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #bbb;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            pointer-events: auto;
+        }
+
+        .editor-tab-btn.active {
+            background: #00ffcc;
+            color: #111;
+            border-color: #00ffcc;
+        }
+
+        .editor-close-btn {
+            background: rgba(255, 68, 68, 0.2);
+            border: 1px solid rgba(255, 68, 68, 0.4);
+            color: #ff8888;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 12px;
+            pointer-events: auto;
+            z-index: 303;
+        }
+
+        #editor-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            pointer-events: auto;
+            overflow-y: auto;
+        }
+
+        .shader-list-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-width: 420px;
+            margin: 0 auto;
+            width: 100%;
+            pointer-events: auto;
+            z-index: 305;
+        }
+
+        .shader-list-item {
+            background: rgba(15, 18, 24, 0.45);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            padding: 14px 18px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.2s, border-color 0.2s;
+            pointer-events: auto;
+            touch-action: auto;
+        }
+        .shader-list-item:hover, .shader-list-item:active {
+            background: rgba(0, 255, 204, 0.2);
+            border-color: #00ffcc;
+        }
+
+        #shader-code-textarea {
+            width: 100%;
+            height: calc(100vh - 170px);
+            margin-bottom: 70px;
+            background: rgba(15, 18, 24, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #00ffcc;
+            font-family: monospace;
+            font-size: 13px;
+            padding: 14px;
+            border-radius: 6px;
+            outline: none;
+            white-space: pre;
+            overflow-x: auto;
+            overflow-y: auto;
+            line-height: 1.4;
+            touch-action: auto;
+            pointer-events: auto;
+            user-select: text;
+            -webkit-user-select: text;
+            resize: none !important;
+        }
+
+        /* Custom Scrollbar Styling for Textarea */
+        #shader-code-textarea::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        #shader-code-textarea::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.0);
+            border-radius: 4px;
+        }
+        #shader-code-textarea::-webkit-scrollbar-thumb {
+            background: rgba(0, 255, 204, 0.4);
+            border-radius: 4px;
+        }
+        #shader-code-textarea::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 255, 204, 0.7);
+        }
+        #shader-code-textarea::-webkit-scrollbar-corner {
+            background: transparent;
+        }
+        #shader-code-textarea::-webkit-resizer {
+            display: none;
+        }
+
+        /* Circular Reload Shaders Button at bottom-right of editing screen */
+        #reload-shaders-btn {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: rgba(20, 24, 30, 0.85);
+            border: 2px solid rgba(0, 255, 204, 0.8);
+            color: #00ffcc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 310;
+            pointer-events: auto;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            transition: transform 0.1s ease, background 0.2s;
+        }
+        #reload-shaders-btn:active {
+            transform: scale(0.92);
+            background: rgba(0, 255, 204, 0.35);
+        }
+        #reload-shaders-btn svg {
+            width: 28px;
+            height: 28px;
+            fill: currentColor;
+            pointer-events: none;
+        }
+
+        #open-editor-btn {
+            position: absolute;
+            top: calc(50% + 55px);
+            right: 15px;
+            transform: translateY(-50%);
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: rgba(20, 24, 30, 0.85);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 102;
+            pointer-events: auto;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+            transition: transform 0.1s ease;
+        }
+        #open-editor-btn:active {
+            transform: scale(0.92) translateY(-50%);
+        }
+        #open-editor-btn svg {
+            width: 18px;
+            height: 18px;
+            fill: currentColor;
+            pointer-events: none;
+        }
+
+        #config-panel {
+            position: absolute;
+            top: 70px;
+            left: 15px;
+            width: 290px;
+            max-height: calc(100vh - 120px);
+            overflow-y: auto;
+            background: rgba(20, 24, 30, 0.9);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            color: #ffffff;
+            font-size: 12px;
+            z-index: 100;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+            display: none;
+            flex-direction: column;
+            gap: 12px;
+            padding: 12px;
+            pointer-events: auto;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .control-group label {
+            display: flex;
+            justify-content: space-between;
+            color: #d0d5dd;
+            font-size: 11px;
+        }
+
+        .control-group input[type="range"] {
+            width: 100%;
+            cursor: pointer;
+            accent-color: #00ffcc;
+        }
+
+        .control-group select, .control-group input[type="text"] {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+            padding: 5px 8px;
+            border-radius: 4px;
+            outline: none;
+            font-size: 11px;
+        }
+
+        .control-group select option {
+            background: #1e242b;
+            color: #ffffff;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+        }
+
+        .checkbox-group input {
+            cursor: pointer;
+            accent-color: #00ffcc;
+        }
+
+        .texture-slot {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 8px;
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .texture-slot-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .btn-danger {
+            background: rgba(255, 68, 68, 0.2);
+            border: 1px solid rgba(255, 68, 68, 0.5);
+            color: #ff8888;
+            padding: 6px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: bold;
+            text-align: center;
+        }
+        .btn-danger:hover {
+            background: rgba(255, 68, 68, 0.4);
+        }
+
+        .btn-primary {
+            background: rgba(0, 255, 204, 0.2);
+            border: 1px solid rgba(0, 255, 204, 0.5);
+            color: #00ffcc;
+            padding: 6px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: background 0.2s;
+        }
+        .btn-primary:hover {
+            background: rgba(0, 255, 204, 0.35);
+        }
+        .btn-primary svg {
+            width: 14px;
+            height: 14px;
+            fill: currentColor;
+            flex-shrink: 0;
+        }
+
+        /* Inline Custom Confirmation Box */
+        #reset-confirm-box {
+            display: none;
+            flex-direction: column;
+            gap: 8px;
+            background: rgba(255, 68, 68, 0.1);
+            border: 1px solid rgba(255, 68, 68, 0.4);
+            padding: 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            color: #ffaaaa;
+        }
+        .confirm-actions {
+            display: flex;
+            gap: 6px;
+        }
+        .confirm-actions button {
+            flex: 1;
+            padding: 4px;
+            font-size: 10px;
+            font-weight: bold;
+            border-radius: 3px;
+            cursor: pointer;
+            border: none;
+        }
+        #btn-confirm-yes {
+            background: #ff4444;
+            color: #fff;
+        }
+        #btn-confirm-no {
+            background: rgba(255, 255, 255, 0.15);
+            color: #ddd;
+        }
+
+        /* Hint Message Banner */
+        #hint-banner {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(20, 24, 30, 0.9);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(0, 255, 204, 0.6);
+            color: #ffffff;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 12px;
+            z-index: 400;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            max-width: 90vw;
+            text-align: center;
+            pointer-events: auto;
+            touch-action: auto;
+        }
+        #hint-banner span {
+            line-height: 1.4;
+        }
+        #hint-close-btn {
+            background: rgba(255, 255, 255, 0.15);
+            border: none;
+            color: #fff;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            pointer-events: auto;
+            touch-action: auto;
+        }
+        #hint-close-btn:hover {
+            background: rgba(255, 68, 68, 0.5);
+        }
+
+        #mode-switcher {
+            position: absolute;
+            top: calc(50% - 30px);
+            right: 15px;
+            transform: translateY(-50%);
+            background: rgba(20, 24, 30, 0.85);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            z-index: 100;
+            pointer-events: auto;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+        }
+
+        .mode-btn {
+            background: transparent;
+            border: none;
+            color: #aaa;
+            padding: 10px 14px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            pointer-events: auto;
+            transition: all 0.2s ease;
+        }
+
+        .mode-btn.active {
+            background: #00ffcc;
+            color: #111;
+        }
+
+        #fullscreen-btn {
+            position: absolute;
+            bottom: 20px;
+            right: 15px;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: rgba(20, 24, 30, 0.85);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 101;
+            pointer-events: auto;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+            transition: transform 0.1s ease;
+        }
+        #fullscreen-btn:active {
+            transform: scale(0.92);
+        }
+        #fullscreen-btn svg {
+            width: 18px;
+            height: 18px;
+            fill: currentColor;
+            pointer-events: none;
+        }
+
+        #fps-counter {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(0, 0, 0, 0.6);
+            color: #00ffcc;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 13px;
+            display: none;
+            z-index: 100;
+            border: 1px solid rgba(0, 255, 204, 0.3);
+            text-shadow: 0 0 5px rgba(0, 255, 204, 0.5);
+        }
+
+        #shader-error-banner {
+            position: absolute;
+            bottom: 15px;
+            left: 15px;
+            right: 75px;
+            background: rgba(180, 20, 20, 0.9);
+            border: 1px solid rgba(255, 100, 100, 0.8);
+            color: #ffffff;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 11px;
+            z-index: 200;
+            display: none;
+            white-space: pre-wrap;
+            word-break: break-all;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+            max-height: 100px;
+            overflow-y: auto;
+        }
+
+        #joystick-base {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            transform: translate(-50%, -50%);
+            display: none;
+            pointer-events: none;
+            z-index: 20;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+        }
+
+        #joystick-thumb {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: rgba(0, 255, 204, 0.85);
+            border: 2px solid rgba(255, 255, 255, 0.9);
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            box-shadow: 0 0 10px rgba(0, 255, 204, 0.5);
+        }
+    </style>
+</head>
+<body>
+
+    <div id="fps-counter">FPS: 60</div>
+    <div id="shader-error-banner"></div>
+
+    <div id="floating-toggle">☰</div>
+
+    <button id="open-editor-btn" title="Edit Shader">
+        <svg viewBox="0 0 24 24">
+            <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+        </svg>
+    </button>
+
+    <!-- Platform-Smart Hint Message Banner -->
+    <div id="hint-banner">
+        <span id="hint-text">Loading instructions...</span>
+        <button id="hint-close-btn" title="Close Hint">✕</button>
+    </div>
+
+    <div id="shader-editor-overlay">
+        <div class="editor-header">
+            <div class="editor-tabs" id="editor-tabs-container"></div>
+            <button class="editor-close-btn" id="close-editor-btn">Close ✕</button>
+        </div>
+        <div id="editor-body">
+            <!-- Rendered dynamically -->
+            <button id="reload-shaders-btn" title="Reload Shaders">
+                <svg viewBox="0 0 24 24">
+                    <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <div id="mode-switcher">
+        <button class="mode-btn active" id="btn-3d">3D</button>
+        <button class="mode-btn" id="btn-2d">2D</button>
+    </div>
+
+    <div id="fullscreen-btn" title="Toggle Fullscreen">
+        <svg viewBox="0 0 24 24">
+            <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
+        </svg>
+    </div>
+
+    <div id="config-panel">
+        <!-- Desktop Site Mode Toggle Switch -->
+        <div class="checkbox-group" style="border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px; margin-bottom: 4px;">
+            <span>Desktop Site Mode</span>
+            <input type="checkbox" id="toggle-desktop-site">
+        </div>
+
+        <div id="lighting-controls" style="display: flex; flex-direction: column; gap: 12px;">
+            <div class="control-group">
+                <label>Light Height (Y): <span id="val-light-y">40.0</span></label>
+                <input type="range" id="slider-light-y" min="-50" max="200" step="1" value="40">
+            </div>
+
+            <div class="control-group">
+                <label>Light Rotation (°): <span id="val-light-rot">35°</span></label>
+                <input type="range" id="slider-light-rot" min="0" max="360" step="1" value="35">
+            </div>
+        </div>
+
+        <div id="texture-controls" style="display:none; flex-direction: column; gap: 8px;">
+            <div style="font-weight:bold; color:#00ffcc; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:4px;">2D Textures & Uniforms</div>
+            <div id="texture-slots-container" style="display: flex; flex-direction: column; gap: 6px;"></div>
+            <button class="btn-primary" id="btn-add-texture">+ Add Image Texture</button>
+        </div>
+
+        <div class="control-group">
+            <label for="select-resolution">Resolution Scale:</label>
+            <select id="select-resolution">
+                <option value="0.4">x0.4 (Ultra Performance)</option>
+                <option value="0.6">x0.6 (Performance)</option>
+                <option value="0.8">x0.8 (Balanced)</option>
+                <option value="1.0">x1.0 (Native)</option>
+                <option value="1.5">x1.5 (High)</option>
+                <option value="2.0">x2.0 (Ultra Quality)</option>
+            </select>
+        </div>
+
+        <div class="checkbox-group">
+            <span>Show FPS Counter</span>
+            <input type="checkbox" id="toggle-fps">
+        </div>
+
+        <div class="control-group" style="margin-top: 4px;">
+            <button class="btn-primary" id="btn-download-zip">
+                <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                Download Shaders (.zip)
+            </button>
+        </div>
+
+        <div class="control-group" style="margin-top: 2px;">
+            <button class="btn-primary" id="btn-reset-shaders" style="border-color: rgba(255, 68, 68, 0.5); color: #ff8888; background: rgba(255, 68, 68, 0.15);">
+                <svg viewBox="0 0 24 24"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6 0 2.97-2.17 5.43-5 5.91v2.02c3.95-.49 7-3.85 7-7.93 0-4.42-3.58-8-8-8zm-6 8c0-1.65.67-3.15 1.76-4.24L6.34 7.34C4.9 8.79 4 10.79 4 13c0 4.08 3.05 7.44 7 7.93v-2.02c-2.83-.48-5-2.94-5-5.91z"/></svg>
+                Restore Default Shaders
+            </button>
+            <div id="reset-confirm-box">
+                <span>Restore all shaders to default? Custom edits will be lost.</span>
+                <div class="confirm-actions">
+                    <button id="btn-confirm-yes">Yes</button>
+                    <button id="btn-confirm-no">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="joystick-base">
+        <div id="joystick-thumb"></div>
+    </div>
+
+    <!-- Three.js Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- JSZip Library for Zipping Shaders -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.2/jszip.min.js"></script>
+
+    <script>
+        let currentMode = localStorage.getItem('appMode') || '3D';
+        let desktopSiteMode = localStorage.getItem('desktopSiteMode') === 'true';
+
+        let camera, scene, renderer;
+        let cube, ground, skyMesh;
+        let skyUniforms;
+        let cubeMaterial, groundMaterial;
+        let dirLight;
+
+        let canvasScene, canvasCamera, canvasMaterial, canvasMesh;
+        let startTime = performance.now();
+
+        let shaderSources = {};
+        let activeShaderFile = null;
+
+        let customTexturesData = JSON.parse(localStorage.getItem('customTexturesData')) || [
+            { name: "uTexture0", url: null }
+        ];
+
+        let renderTarget, postScene, postCamera, postMaterial;
+
+        let lightDistance = 50;
+        let lightHeight = localStorage.getItem('lightHeight') !== null ? parseFloat(localStorage.getItem('lightHeight')) : 40;
+        let lightAngleDeg = localStorage.getItem('lightAngleDeg') !== null ? parseFloat(localStorage.getItem('lightAngleDeg')) : 35;
+        
+        const dirLightPos = new THREE.Vector3();
+        const dirLightColor = new THREE.Color(0xffffff);
+        const ambientColor = new THREE.Color(0x707070);
+
+        let currentResScale = localStorage.getItem('currentResScale') !== null ? parseFloat(localStorage.getItem('currentResScale')) : 2.0;
+
+        let fpsEnabled = localStorage.getItem('fpsEnabled') !== null ? (localStorage.getItem('fpsEnabled') === 'true') : false;
+        let frameCount = 0;
+        let lastFpsTime = performance.now();
+        const fpsElement = document.getElementById('fps-counter');
+        const errorBanner = document.getElementById('shader-error-banner');
+
+        let moveTouchId = null;
+        let lookTouchId = null;
+        const activeTouches = new Map();
+
+        const joyBase = document.getElementById('joystick-base');
+        const joyThumb = document.getElementById('joystick-thumb');
+        let joyCenter = { x: 0, y: 0 };
+        let moveVector = { x: 0, y: 0 };
+        
+        const maxRadius = 50;         
+        const followThreshold = 50;   
+
+        let isMouseDown = false;
+        let lookPrev = { x: 0, y: 0 };
+        let yaw = 0;
+        let pitch = 0;
+
+        const keyboardState = { w: false, a: false, s: false, d: false };
+
+        async function loadShaderFile(url) {
+            const response = await fetch(url);
+            if (!response.ok) throw new Error(`Failed to load shader: ${url}`);
+            return await response.text();
+        }
+
+        function saveShadersToLocalStorage() {
+            localStorage.setItem('savedShaderSources', JSON.stringify(shaderSources));
+        }
+
+        function reloadShaders() {
+            clearShaderError();
+            const textarea = document.getElementById('shader-code-textarea');
+            if (textarea && activeShaderFile) {
+                shaderSources[activeShaderFile] = textarea.value;
+                saveShadersToLocalStorage();
+            }
+            updateMaterialShaders();
+        }
+
+        function showShaderError(shaderName, errorLog) {
+            console.error(`Shader Error [${shaderName}]:`, errorLog);
+            errorBanner.style.display = 'block';
+            errorBanner.textContent = `[SHADER ERROR - ${shaderName}]:\n${errorLog}`;
+        }
+
+        function clearShaderError() {
+            errorBanner.style.display = 'none';
+            errorBanner.textContent = '';
+        }
+
+        function createTileCanvasTexture(darkTileColor, lightTileColor) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 256;
+            canvas.height = 256;
+            const ctx = canvas.getContext('2d');
+
+            const tileSize = 128;
+            for (let x = 0; x < 256; x += tileSize) {
+                for (let y = 0; y < 256; y += tileSize) {
+                    ctx.fillStyle = ((x + y) % (tileSize * 2) === 0) ? darkTileColor : lightTileColor;
+                    ctx.fillRect(x, y, tileSize, tileSize);
+                }
+            }
+
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.wrapS = THREE.RepeatWrapping;
+            texture.wrapT = THREE.RepeatWrapping;
+            texture.minFilter = THREE.LinearFilter;
+            texture.magFilter = THREE.LinearFilter;
+            texture.generateMipmaps = true;
+            return texture;
+        }
+
+        function updateLightPosition() {
+            const rad = lightAngleDeg * (Math.PI / 180);
+            dirLightPos.set(
+                Math.cos(rad) * lightDistance,
+                lightHeight,
+                Math.sin(rad) * lightDistance
+            );
+
+            if (dirLight) dirLight.position.copy(dirLightPos);
+        }
+
+        function updateRenderTargetResolution() {
+            const width = Math.max(1, Math.floor(window.innerWidth * currentResScale));
+            const height = Math.max(1, Math.floor(window.innerHeight * currentResScale));
+
+            if (renderTarget) renderTarget.dispose();
+
+            renderTarget = new THREE.WebGLRenderTarget(width, height, {
+                minFilter: THREE.LinearFilter,
+                magFilter: THREE.LinearFilter,
+                generateMipmaps: false
+            });
+
+            if (postMaterial) {
+                postMaterial.uniforms.tDiffuse.value = renderTarget.texture;
+            }
+            if (canvasMaterial && canvasMaterial.uniforms.uResolution) {
+                canvasMaterial.uniforms.uResolution.value.set(width, height);
+            }
+        }
+
+        function rebuildCanvasMaterialUniforms() {
+            if (!canvasMaterial) return;
+            const uniforms = {
+                uTime: canvasMaterial.uniforms.uTime || { value: 0.0 },
+                uResolution: canvasMaterial.uniforms.uResolution || { value: new THREE.Vector2(window.innerWidth, window.innerHeight) }
+            };
+
+            const textureLoader = new THREE.TextureLoader();
+            customTexturesData.forEach((item) => {
+                if (item.url) {
+                    const tex = textureLoader.load(item.url);
+                    tex.minFilter = THREE.LinearFilter;
+                    tex.magFilter = THREE.LinearFilter;
+                    uniforms[item.name] = { value: tex };
+                } else {
+                    uniforms[item.name] = { value: null };
+                }
+            });
+            canvasMaterial.uniforms = uniforms;
+            canvasMaterial.needsUpdate = true;
+        }
+
+        async function init() {
+            try {
+                const shaderPaths = [
+                    'shaders/sky.vert', 'shaders/sky.frag',
+                    'shaders/cube.vert', 'shaders/cube.frag',
+                    'shaders/ground.vert', 'shaders/ground.frag',
+                    'shaders/post.vert', 'shaders/post.frag',
+                    'shaders/canvas.vert', 'shaders/canvas.frag'
+                ];
+
+                const results = await Promise.all(shaderPaths.map(path => loadShaderFile(path)));
+                shaderPaths.forEach((path, idx) => {
+                    shaderSources[path] = results[idx];
+                });
+
+                const savedEdits = localStorage.getItem('savedShaderSources');
+                if (savedEdits) {
+                    try {
+                        const parsed = JSON.parse(savedEdits);
+                        Object.assign(shaderSources, parsed);
+                    } catch (e) {
+                        console.error("Failed to load saved shader cache", e);
+                    }
+                }
+
+                scene = new THREE.Scene();
+                camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+                camera.position.set(0, 2, 6);
+                updateLightPosition();
+
+                skyUniforms = { uSunPosition: { value: dirLightPos } };
+                const skyMat = new THREE.ShaderMaterial({
+                    vertexShader: shaderSources['shaders/sky.vert'],
+                    fragmentShader: shaderSources['shaders/sky.frag'],
+                    uniforms: skyUniforms,
+                    side: THREE.BackSide
+                });
+                skyMesh = new THREE.Mesh(new THREE.SphereGeometry(400, 32, 15), skyMat);
+                scene.add(skyMesh);
+
+                dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
+                dirLight.position.copy(dirLightPos);
+                scene.add(dirLight);
+
+                const fallbackGroundTex = createTileCanvasTexture('#222222', '#ffffff');
+                const fallbackCubeTex = createTileCanvasTexture('#1e242b', '#ffffff');
+
+                groundMaterial = new THREE.ShaderMaterial({
+                    vertexShader: shaderSources['shaders/ground.vert'],
+                    fragmentShader: shaderSources['shaders/ground.frag'],
+                    uniforms: {
+                        uTexture: { value: fallbackGroundTex },
+                        uUvScale: { value: new THREE.Vector2(12.0, 12.0) },
+                        uDirLightPos: { value: dirLightPos },
+                        uDirLightColor: { value: dirLightColor },
+                        uAmbientColor: { value: ambientColor },
+                        uCameraPosition: { value: camera.position },
+                        uSpecularColor: { value: new THREE.Color(1.0, 1.0, 1.0) },
+                        uSpecularPower: { value: 16.0 },
+                        uSpecularIntensity: { value: 0.55 },
+                        uAOStrength: { value: 0.2 }
+                    }
+                });
+
+                cubeMaterial = new THREE.ShaderMaterial({
+                    vertexShader: shaderSources['shaders/cube.vert'],
+                    fragmentShader: shaderSources['shaders/cube.frag'],
+                    uniforms: {
+                        uTexture: { value: fallbackCubeTex },
+                        uUvScale: { value: new THREE.Vector2(1.0, 1.0) },
+                        uDirLightPos: { value: dirLightPos },
+                        uDirLightColor: { value: dirLightColor },
+                        uAmbientColor: { value: ambientColor },
+                        uCameraPosition: { value: camera.position },
+                        uSpecularColor: { value: new THREE.Color(1.0, 1.0, 1.0) },
+                        uSpecularPower: { value: 64.0 },
+                        uSpecularIntensity: { value: 0.4 },
+                        uAOStrength: { value: 1.0 }
+                    }
+                });
+
+                const groundGeo = new THREE.PlaneGeometry(30, 30, 32, 32);
+                const groundAO = new Float32Array(groundGeo.attributes.position.count);
+                for (let i = 0; i < groundAO.length; i++) {
+                    let x = groundGeo.attributes.position.getX(i);
+                    let z = groundGeo.attributes.position.getY(i);
+                    let dist = Math.hypot(x, z);
+                    let ao = THREE.MathUtils.smoothstep(dist, 0.0, 5.0);
+                    groundAO[i] = THREE.MathUtils.lerp(0.3, 1.0, ao);
+                }
+                groundGeo.setAttribute('aAO', new THREE.BufferAttribute(groundAO, 1));
+                ground = new THREE.Mesh(groundGeo, groundMaterial);
+                ground.rotation.x = -Math.PI / 2;
+                scene.add(ground);
+
+                const cubeGeo = new THREE.BoxGeometry(1.5, 1.5, 1.5);
+                const cubeAO = new Float32Array(cubeGeo.attributes.position.count);
+                for (let i = 0; i < cubeAO.length; i++) {
+                    let y = cubeGeo.attributes.position.getY(i);
+                    cubeAO[i] = THREE.MathUtils.lerp(0.5, 1.0, (y + 0.75) / 1.5);
+                }
+                cubeGeo.setAttribute('aAO', new THREE.BufferAttribute(cubeAO, 1));
+                cube = new THREE.Mesh(cubeGeo, cubeMaterial);
+                cube.position.set(0, 0.75, 0);
+                scene.add(cube);
+
+                const textureLoader = new THREE.TextureLoader();
+                textureLoader.load('textures/ground.png', (tex) => {
+                    tex.wrapS = THREE.RepeatWrapping; tex.wrapT = THREE.RepeatWrapping;
+                    tex.minFilter = THREE.LinearFilter; tex.magFilter = THREE.LinearFilter;
+                    groundMaterial.uniforms.uTexture.value = tex;
+                });
+                textureLoader.load('textures/cube.png', (tex) => {
+                    tex.minFilter = THREE.LinearFilter; tex.magFilter = THREE.LinearFilter;
+                    cubeMaterial.uniforms.uTexture.value = tex;
+                });
+
+                const targetPos = cube.position.clone();
+                const cameraPos = camera.position.clone();
+                const dir = targetPos.sub(cameraPos).normalize();
+                yaw = Math.atan2(-dir.x, -dir.z);
+                pitch = Math.asin(dir.y);
+                updateCameraRotation();
+
+                canvasScene = new THREE.Scene();
+                canvasCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+                canvasMaterial = new THREE.ShaderMaterial({
+                    vertexShader: shaderSources['shaders/canvas.vert'],
+                    fragmentShader: shaderSources['shaders/canvas.frag'],
+                    uniforms: {
+                        uTime: { value: 0.0 },
+                        uResolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) }
+                    }
+                });
+                rebuildCanvasMaterialUniforms();
+                canvasMesh = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), canvasMaterial);
+                canvasScene.add(canvasMesh);
+
+                renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2.0));
+
+                const originalGetShaderInfoLog = renderer.context.getShaderInfoLog;
+                renderer.context.getShaderInfoLog = function(shader) {
+                    const log = originalGetShaderInfoLog.call(this, shader);
+                    if (log && log.trim().length > 0) {
+                        showShaderError("GLSL Compilation Error", log);
+                    }
+                    return log;
+                };
+
+                document.body.appendChild(renderer.domElement);
+                updateRenderTargetResolution();
+
+                postScene = new THREE.Scene();
+                postCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+                postMaterial = new THREE.ShaderMaterial({
+                    vertexShader: shaderSources['shaders/post.vert'],
+                    fragmentShader: shaderSources['shaders/post.frag'],
+                    uniforms: {
+                        tDiffuse: { value: renderTarget.texture },
+                        uVignetteIntensity: { value: 0.2 },
+                        uVignetteRoundness: { value: 0.6 },
+                        uSunPosition: { value: dirLightPos },
+                        uCameraPosition: { value: camera.position }
+                    }
+                });
+                postScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), postMaterial));
+
+                setupUI();
+                setupGlobalKeyboardShortcuts();
+
+                // Platform Hint based on Desktop Site Setting checkbox & 10-second timer with robust click/touch closing
+                const hintBanner = document.getElementById('hint-banner');
+                const hintText = document.getElementById('hint-text');
+                const hintCloseBtn = document.getElementById('hint-close-btn');
+
+                if (desktopSiteMode) {
+                    hintText.innerHTML = "💡 <b>Desktop Site Controls:</b> Use <b>WASD</b> to move, Click to lock mouse/look, <b>F11</b> Fullscreen, <b>Esc</b> Settings.";
+                } else {
+                    hintText.innerHTML = "📱 <b>Mobile Controls:</b> Use left virtual joystick to move, right screen drag to look around.";
+                }
+
+                const hintTimer = setTimeout(() => {
+                    if (hintBanner) hintBanner.style.display = 'none';
+                }, 10000);
+
+                const closeHintAction = (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    clearTimeout(hintTimer);
+                    hintBanner.style.display = 'none';
+                };
+
+                hintCloseBtn.addEventListener('click', closeHintAction);
+                hintCloseBtn.addEventListener('touchend', closeHintAction, { passive: false });
+
+                window.addEventListener('resize', onWindowResize, false);
+                window.addEventListener('touchstart', onTouchStart, { passive: false });
+                window.addEventListener('touchmove', onTouchMove, { passive: false });
+                window.addEventListener('touchend', onTouchEnd, { passive: false });
+                window.addEventListener('mousedown', onMouseDown, false);
+                window.addEventListener('mousemove', onMouseMove, false);
+                window.addEventListener('mouseup', onMouseUp, false);
+                window.addEventListener('wheel', onMouseWheel, { passive: true });
+
+                animate();
+            } catch (error) {
+                showShaderError("Initialization Error", error.message);
+            }
+        }
+
+        function setupGlobalKeyboardShortcuts() {
+            window.addEventListener('keydown', (e) => {
+                const overlay = document.getElementById('shader-editor-overlay');
+                const isEditing = overlay.style.display === 'flex';
+
+                if (e.key === 'F11') {
+                    e.preventDefault();
+                    const docElement = document.documentElement;
+                    const isInFullscreen = document.fullscreenElement || document.webkitFullscreenElement;
+                    if (!isInFullscreen) {
+                        if (docElement.requestFullscreen) docElement.requestFullscreen();
+                    } else {
+                        if (document.exitFullscreen) document.exitFullscreen();
+                    }
+                    return;
+                }
+
+                if (e.key === 'Escape') {
+                    if (isEditing) {
+                        closeShaderEditor();
+                    } else {
+                        const panel = document.getElementById('config-panel');
+                        const toggleBtn = document.getElementById('floating-toggle');
+                        if (panel.style.display === 'flex') {
+                            panel.style.display = 'none';
+                            toggleBtn.textContent = '☰';
+                        } else {
+                            panel.style.display = 'flex';
+                            toggleBtn.textContent = '×';
+                        }
+                    }
+                    if (document.pointerLockElement) {
+                        document.exitPointerLock();
+                    }
+                    return;
+                }
+
+                if (isEditing) return;
+
+                const key = e.key.toLowerCase();
+                if (key in keyboardState) {
+                    keyboardState[key] = true;
+                }
+            });
+
+            window.addEventListener('keyup', (e) => {
+                const key = e.key.toLowerCase();
+                if (key in keyboardState) {
+                    keyboardState[key] = false;
+                }
+            });
+        }
+
+        function updateMaterialShaders() {
+            clearShaderError();
+            try {
+                if (skyMesh) {
+                    skyMesh.material.vertexShader = shaderSources['shaders/sky.vert'];
+                    skyMesh.material.fragmentShader = shaderSources['shaders/sky.frag'];
+                    skyMesh.material.needsUpdate = true;
+                }
+                if (cubeMaterial) {
+                    cubeMaterial.vertexShader = shaderSources['shaders/cube.vert'];
+                    cubeMaterial.fragmentShader = shaderSources['shaders/cube.frag'];
+                    cubeMaterial.needsUpdate = true;
+                }
+                if (groundMaterial) {
+                    groundMaterial.vertexShader = shaderSources['shaders/ground.vert'];
+                    groundMaterial.fragmentShader = shaderSources['shaders/ground.frag'];
+                    groundMaterial.needsUpdate = true;
+                }
+                if (postMaterial) {
+                    postMaterial.vertexShader = shaderSources['shaders/post.vert'];
+                    postMaterial.fragmentShader = shaderSources['shaders/post.frag'];
+                    postMaterial.needsUpdate = true;
+                }
+                if (canvasMaterial) {
+                    canvasMaterial.vertexShader = shaderSources['shaders/canvas.vert'];
+                    canvasMaterial.fragmentShader = shaderSources['shaders/canvas.frag'];
+                    canvasMaterial.needsUpdate = true;
+                }
+            } catch (err) {
+                showShaderError("Shader Update Exception", err.message);
+            }
+        }
+
+        function openShaderEditor(e) {
+            if (e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            if (!activeShaderFile) {
+                const lastOpened = sessionStorage.getItem('lastActiveShader');
+                activeShaderFile = lastOpened ? lastOpened : (currentMode === '2D' ? 'shaders/canvas.frag' : null);
+            }
+            document.getElementById('shader-editor-overlay').style.display = 'flex';
+            if (document.pointerLockElement) document.exitPointerLock();
+            renderEditorContent();
+        }
+
+        function closeShaderEditor(e) {
+            if (e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            document.getElementById('shader-editor-overlay').style.display = 'none';
+        }
+
+        function renderEditorContent() {
+            const tabsContainer = document.getElementById('editor-tabs-container');
+            const bodyContainer = document.getElementById('editor-body');
+            tabsContainer.innerHTML = '';
+            
+            const existingReloadBtn = document.getElementById('reload-shaders-btn');
+            bodyContainer.innerHTML = '';
+            if (existingReloadBtn) {
+                bodyContainer.appendChild(existingReloadBtn);
+            }
+
+            if (currentMode === '2D') {
+                const files = ['shaders/canvas.vert', 'shaders/canvas.frag'];
+                if (!files.includes(activeShaderFile)) activeShaderFile = 'shaders/canvas.frag';
+                
+                sessionStorage.setItem('lastActiveShader', activeShaderFile);
+
+                files.forEach(file => {
+                    const btn = document.createElement('button');
+                    btn.className = `editor-tab-btn ${activeShaderFile === file ? 'active' : ''}`;
+                    btn.textContent = file.split('/')[1];
+                    
+                    const handleTabSelect = (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const activeTa = document.getElementById('shader-code-textarea');
+                        if (activeTa && activeShaderFile) {
+                            shaderSources[activeShaderFile] = activeTa.value;
+                            saveShadersToLocalStorage();
+                        }
+                        activeShaderFile = file;
+                        sessionStorage.setItem('lastActiveShader', activeShaderFile);
+                        renderEditorContent();
+                    };
+
+                    btn.addEventListener('click', handleTabSelect);
+                    btn.addEventListener('touchend', handleTabSelect, { passive: false });
+                    tabsContainer.appendChild(btn);
+                });
+
+                const textarea = document.createElement('textarea');
+                textarea.id = 'shader-code-textarea';
+                textarea.value = shaderSources[activeShaderFile] || '';
+                bodyContainer.insertBefore(textarea, existingReloadBtn);
+
+            } else {
+                if (!activeShaderFile) {
+                    sessionStorage.removeItem('lastActiveShader');
+                    const listDiv = document.createElement('div');
+                    listDiv.className = 'shader-list-container';
+                    const shaders3D = [
+                        { name: 'cube.frag', keyFrag: 'shaders/cube.frag' },
+                        { name: 'cube.vert', keyFrag: 'shaders/cube.vert' },
+                        { name: 'ground.frag', keyFrag: 'shaders/ground.frag' },
+                        { name: 'ground.vert', keyFrag: 'shaders/ground.vert' },
+                        { name: 'post.frag', keyFrag: 'shaders/post.frag' },
+                        { name: 'post.vert', keyFrag: 'shaders/post.vert' },
+                        { name: 'sky.frag', keyFrag: 'shaders/sky.frag' },
+                        { name: 'sky.vert', keyFrag: 'shaders/sky.vert' }
+                    ];
+
+                    shaders3D.forEach(sh => {
+                        const item = document.createElement('div');
+                        item.className = 'shader-list-item';
+                        item.innerHTML = `<span>${sh.name}</span> <span>➔</span>`;
+
+                        const handleSelect = (e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            activeShaderFile = sh.keyFrag;
+                            sessionStorage.setItem('lastActiveShader', activeShaderFile);
+                            renderEditorContent();
+                        };
+
+                        item.addEventListener('click', handleSelect);
+                        item.addEventListener('touchend', handleSelect, { passive: false });
+                        
+                        listDiv.appendChild(item);
+                    });
+                    bodyContainer.insertBefore(listDiv, existingReloadBtn);
+
+                } else {
+                    sessionStorage.setItem('lastActiveShader', activeShaderFile);
+                    const backBtn = document.createElement('button');
+                    backBtn.className = 'editor-tab-btn';
+                    backBtn.textContent = '← Back';
+                    
+                    const handleBack = (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const activeTa = document.getElementById('shader-code-textarea');
+                        if (activeTa && activeShaderFile) {
+                            shaderSources[activeShaderFile] = activeTa.value;
+                            saveShadersToLocalStorage();
+                        }
+                        activeShaderFile = null;
+                        sessionStorage.removeItem('lastActiveShader');
+                        renderEditorContent();
+                    };
+                    backBtn.addEventListener('click', handleBack);
+                    backBtn.addEventListener('touchend', handleBack, { passive: false });
+                    tabsContainer.appendChild(backBtn);
+
+                    const baseName = activeShaderFile.replace('.frag', '').replace('.vert', '');
+                    ['vert', 'frag'].forEach(ext => {
+                        const filePath = `${baseName}.${ext}`;
+                        const btn = document.createElement('button');
+                        btn.className = `editor-tab-btn ${activeShaderFile === filePath ? 'active' : ''}`;
+                        btn.textContent = `${ext.toUpperCase()}`;
+
+                        const handleExtSelect = (e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            const activeTa = document.getElementById('shader-code-textarea');
+                            if (activeTa && activeShaderFile) {
+                                shaderSources[activeShaderFile] = activeTa.value;
+                                saveShadersToLocalStorage();
+                            }
+                            activeShaderFile = filePath;
+                            sessionStorage.setItem('lastActiveShader', activeShaderFile);
+                            renderEditorContent();
+                        };
+                        btn.addEventListener('click', handleExtSelect);
+                        btn.addEventListener('touchend', handleExtSelect, { passive: false });
+                        tabsContainer.appendChild(btn);
+                    });
+
+                    const textarea = document.createElement('textarea');
+                    textarea.id = 'shader-code-textarea';
+                    textarea.value = shaderSources[activeShaderFile] || '';
+                    bodyContainer.insertBefore(textarea, existingReloadBtn);
+                }
+            }
+        }
+
+        function updateUIModeVisibility() {
+            const lightingControls = document.getElementById('lighting-controls');
+            const textureControls = document.getElementById('texture-controls');
+            const btn3d = document.getElementById('btn-3d');
+            const btn2d = document.getElementById('btn-2d');
+
+            if (currentMode === '2D') {
+                lightingControls.style.display = 'none';
+                textureControls.style.display = 'flex';
+                btn2d.classList.add('active');
+                btn3d.classList.remove('active');
+            } else {
+                lightingControls.style.display = 'flex';
+                textureControls.style.display = 'none';
+                btn3d.classList.add('active');
+                btn2d.classList.remove('active');
+            }
+        }
+
+        function renderTextureSlotsUI() {
+            const container = document.getElementById('texture-slots-container');
+            container.innerHTML = '';
+
+            customTexturesData.forEach((item, index) => {
+                const slotDiv = document.createElement('div');
+                slotDiv.className = 'texture-slot';
+                slotDiv.innerHTML = `
+                    <div class="texture-slot-header">
+                        <span style="font-size:10px; color:#aaa;">Slot #${index}</span>
+                        <button class="btn-danger" data-index="${index}">Remove</button>
+                    </div>
+                    <div class="control-group">
+                        <label>Uniform Name:</label>
+                        <input type="text" class="uniform-name-input" data-index="${index}" value="${item.name}">
+                    </div>
+                    <div class="control-group">
+                        <label>Image File:</label>
+                        <input type="file" class="texture-file-input" data-index="${index}" accept="image/*" style="font-size:10px; color:#aaa;">
+                    </div>
+                `;
+                container.appendChild(slotDiv);
+            });
+
+            container.querySelectorAll('.btn-danger').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const idx = parseInt(e.target.getAttribute('data-index'));
+                    customTexturesData.splice(idx, 1);
+                    localStorage.setItem('customTexturesData', JSON.stringify(customTexturesData));
+                    renderTextureSlotsUI();
+                    rebuildCanvasMaterialUniforms();
+                });
+            });
+
+            container.querySelectorAll('.uniform-name-input').forEach(input => {
+                input.addEventListener('input', (e) => {
+                    const idx = parseInt(e.target.getAttribute('data-index'));
+                    customTexturesData[idx].name = e.target.value.trim();
+                    localStorage.setItem('customTexturesData', JSON.stringify(customTexturesData));
+                    rebuildCanvasMaterialUniforms();
+                });
+            });
+
+            container.querySelectorAll('.texture-file-input').forEach(input => {
+                input.addEventListener('change', (e) => {
+                    const idx = parseInt(e.target.getAttribute('data-index'));
+                    const file = e.target.files[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = function(uploadEvent) {
+                            customTexturesData[idx].url = uploadEvent.target.result;
+                            localStorage.setItem('customTexturesData', JSON.stringify(customTexturesData));
+                            rebuildCanvasMaterialUniforms();
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+            });
+        }
+
+        function setupUI() {
+            const panel = document.getElementById('config-panel');
+            const toggleBtn = document.getElementById('floating-toggle');
+            const fullscreenBtn = document.getElementById('fullscreen-btn');
+            const openEditorBtn = document.getElementById('open-editor-btn');
+            const closeEditorBtn = document.getElementById('close-editor-btn');
+            const reloadShadersBtn = document.getElementById('reload-shaders-btn');
+
+            updateUIModeVisibility();
+            renderTextureSlotsUI();
+
+            openEditorBtn.addEventListener('click', openShaderEditor);
+            openEditorBtn.addEventListener('touchend', openShaderEditor, { passive: false });
+
+            closeEditorBtn.addEventListener('click', closeShaderEditor);
+            closeEditorBtn.addEventListener('touchend', closeShaderEditor, { passive: false });
+
+            const handleReloadAction = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                reloadShaders();
+            };
+            reloadShadersBtn.addEventListener('click', handleReloadAction);
+            reloadShadersBtn.addEventListener('touchend', handleReloadAction, { passive: false });
+
+            document.getElementById('btn-add-texture').addEventListener('click', () => {
+                customTexturesData.push({ name: `uTexture${customTexturesData.length}`, url: null });
+                localStorage.setItem('customTexturesData', JSON.stringify(customTexturesData));
+                renderTextureSlotsUI();
+                rebuildCanvasMaterialUniforms();
+            });
+
+            // Download Zip Bundle Button Listener
+            document.getElementById('btn-download-zip').addEventListener('click', async () => {
+                if (typeof JSZip === 'undefined') {
+                    alert('JSZip library is still loading or failed to connect.');
+                    return;
+                }
+
+                const zip = new JSZip();
+                let zipName = '';
+
+                if (currentMode === '3D') {
+                    zipName = '3d-shaders.zip';
+                    const targetPaths = [
+                        'shaders/sky.vert', 'shaders/sky.frag',
+                        'shaders/cube.vert', 'shaders/cube.frag',
+                        'shaders/ground.vert', 'shaders/ground.frag',
+                        'shaders/post.vert', 'shaders/post.frag'
+                    ];
+
+                    targetPaths.forEach(path => {
+                        if (shaderSources[path]) {
+                            zip.file(path, shaderSources[path]);
+                        }
+                    });
+                } else {
+                    zipName = '2d-canvas-shaders.zip';
+                    const targetPaths = [
+                        'shaders/canvas.vert', 'shaders/canvas.frag'
+                    ];
+
+                    targetPaths.forEach(path => {
+                        if (shaderSources[path]) {
+                            zip.file(path, shaderSources[path]);
+                        }
+                    });
+                }
+
+                try {
+                    const content = await zip.generateAsync({ type: 'blob' });
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(content);
+                    link.download = zipName;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                } catch (err) {
+                    console.error('Failed to create zip package:', err);
+                    alert('Error generating zip file.');
+                }
+            });
+
+            // Custom Inline Reset Confirmation UI Handling
+            const resetBtn = document.getElementById('btn-reset-shaders');
+            const confirmBox = document.getElementById('reset-confirm-box');
+            const confirmYes = document.getElementById('btn-confirm-yes');
+            const confirmNo = document.getElementById('btn-confirm-no');
+
+            resetBtn.addEventListener('click', () => {
+                resetBtn.style.display = 'none';
+                confirmBox.style.display = 'flex';
+            });
+
+            confirmNo.addEventListener('click', () => {
+                confirmBox.style.display = 'none';
+                resetBtn.style.display = 'flex';
+            });
+
+            confirmYes.addEventListener('click', () => {
+                localStorage.removeItem('savedShaderSources');
+                window.location.reload();
+            });
+
+            // Desktop Site Mode Checkbox Binding
+            const toggleDesktopSite = document.getElementById('toggle-desktop-site');
+            toggleDesktopSite.checked = desktopSiteMode;
+            toggleDesktopSite.addEventListener('change', (e) => {
+                desktopSiteMode = e.target.checked;
+                localStorage.setItem('desktopSiteMode', desktopSiteMode);
+                window.location.reload();
+            });
+
+            const sliderY = document.getElementById('slider-light-y');
+            const valY = document.getElementById('val-light-y');
+            sliderY.value = lightHeight;
+            valY.textContent = lightHeight.toFixed(1);
+
+            const sliderRot = document.getElementById('slider-light-rot');
+            const valRot = document.getElementById('val-light-rot');
+            sliderRot.value = lightAngleDeg;
+            valRot.textContent = `${lightAngleDeg}°`;
+
+            const selectRes = document.getElementById('select-resolution');
+            selectRes.value = currentResScale.toFixed(1);
+
+            const toggleFps = document.getElementById('toggle-fps');
+            toggleFps.checked = fpsEnabled;
+            fpsElement.style.display = fpsEnabled ? 'block' : 'none';
+
+            panel.style.display = 'none';
+            toggleBtn.textContent = '☰';
+
+            toggleBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (panel.style.display === 'none' || panel.style.display === '') {
+                    panel.style.display = 'flex';
+                    toggleBtn.textContent = '×';
+                } else {
+                    panel.style.display = 'none';
+                    toggleBtn.textContent = '☰';
+                }
+            });
+
+            document.getElementById('btn-3d').addEventListener('click', () => {
+                currentMode = '3D';
+                localStorage.setItem('appMode', currentMode);
+                activeShaderFile = null;
+                sessionStorage.removeItem('lastActiveShader');
+                updateUIModeVisibility();
+            });
+
+            document.getElementById('btn-2d').addEventListener('click', () => {
+                currentMode = '2D';
+                localStorage.setItem('appMode', currentMode);
+                activeShaderFile = 'shaders/canvas.frag';
+                sessionStorage.setItem('lastActiveShader', activeShaderFile);
+                updateUIModeVisibility();
+            });
+
+            fullscreenBtn.addEventListener('click', () => {
+                const docElement = document.documentElement;
+                const isInFullscreen = document.fullscreenElement || document.webkitFullscreenElement;
+
+                if (!isInFullscreen) {
+                    if (docElement.requestFullscreen) docElement.requestFullscreen();
+                } else {
+                    if (document.exitFullscreen) document.exitFullscreen();
+                }
+            });
+
+            sliderY.addEventListener('input', (e) => {
+                lightHeight = parseFloat(e.target.value);
+                valY.textContent = lightHeight.toFixed(1);
+                updateLightPosition();
+                localStorage.setItem('lightHeight', lightHeight);
+            });
+
+            sliderRot.addEventListener('input', (e) => {
+                lightAngleDeg = parseFloat(e.target.value);
+                valRot.textContent = `${lightAngleDeg}°`;
+                updateLightPosition();
+                localStorage.setItem('lightAngleDeg', lightAngleDeg);
+            });
+
+            selectRes.addEventListener('change', (e) => {
+                currentResScale = parseFloat(e.target.value);
+                updateRenderTargetResolution();
+                localStorage.setItem('currentResScale', currentResScale);
+            });
+
+            toggleFps.addEventListener('change', (e) => {
+                fpsEnabled = e.target.checked;
+                fpsElement.style.display = fpsEnabled ? 'block' : 'none';
+                localStorage.setItem('fpsEnabled', fpsEnabled);
+            });
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            updateRenderTargetResolution();
+        }
+
+        function onTouchStart(e) {
+            const overlay = document.getElementById('shader-editor-overlay');
+            if (desktopSiteMode || overlay.style.display === 'flex' || currentMode === '2D' || e.target.closest('#config-panel') || e.target.closest('#hint-banner') || e.target.closest('#floating-toggle') || e.target.closest('#mode-switcher') || e.target.closest('#fullscreen-btn') || e.target.closest('#open-editor-btn') || e.target.closest('#shader-editor-overlay')) return;
+            e.preventDefault();
+
+            for (let i = 0; i < e.changedTouches.length; i++) {
+                const touch = e.changedTouches[i];
+                activeTouches.set(touch.identifier, { x: touch.clientX, y: touch.clientY });
+            }
+
+            for (let i = 0; i < e.changedTouches.length; i++) {
+                const touch = e.changedTouches[i];
+                const x = touch.clientX;
+                const y = touch.clientY;
+
+                if (x < window.innerWidth / 2 && moveTouchId === null) {
+                    moveTouchId = touch.identifier;
+                    joyCenter = { x: x, y: y };
+                    joyBase.style.left = `${x}px`;
+                    joyBase.style.top = `${y}px`;
+                    joyThumb.style.transform = `translate(-50%, -50%)`;
+                    joyBase.style.display = 'block';
+                    moveVector = { x: 0, y: 0 };
+                } 
+                else if (x >= window.innerWidth / 2 && lookTouchId === null) {
+                    lookTouchId = touch.identifier;
+                    lookPrev = { x: x, y: y };
+                }
+            }
+        }
+
+        function onTouchMove(e) {
+            const overlay = document.getElementById('shader-editor-overlay');
+            if (desktopSiteMode || overlay.style.display === 'flex' || currentMode === '2D' || e.target.closest('#config-panel') || e.target.closest('#hint-banner') || e.target.closest('#floating-toggle') || e.target.closest('#mode-switcher') || e.target.closest('#fullscreen-btn') || e.target.closest('#open-editor-btn') || e.target.closest('#shader-editor-overlay')) return;
+            e.preventDefault();
+
+            for (let i = 0; i < e.changedTouches.length; i++) {
+                const touch = e.changedTouches[i];
+                if (activeTouches.has(touch.identifier)) {
+                    activeTouches.set(touch.identifier, { x: touch.clientX, y: touch.clientY });
+                }
+            }
+
+            for (let i = 0; i < e.changedTouches.length; i++) {
+                const touch = e.changedTouches[i];
+                const x = touch.clientX;
+                const y = touch.clientY;
+
+                if (touch.identifier === moveTouchId) {
+                    let dx = x - joyCenter.x;
+                    let dy = y - joyCenter.y;
+                    let dist = Math.hypot(dx, dy);
+
+                    if (dist > followThreshold) {
+                        const angle = Math.atan2(dy, dx);
+                        const overshot = dist - followThreshold;
+                        
+                        joyCenter.x += Math.cos(angle) * overshot;
+                        joyCenter.y += Math.sin(angle) * overshot;
+                        joyBase.style.left = `${joyCenter.x}px`;
+                        joyBase.style.top = `${joyCenter.y}px`;
+                        
+                        dx = x - joyCenter.x;
+                        dy = y - joyCenter.y;
+                        dist = Math.hypot(dx, dy);
+                    }
+
+                    if (dist > maxRadius) {
+                        const angle = Math.atan2(dy, dx);
+                        dx = Math.cos(angle) * maxRadius;
+                        dy = Math.sin(angle) * maxRadius;
+                    }
+
+                    joyThumb.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+                    moveVector = { x: dx / maxRadius, y: dy / maxRadius };
+                }
+
+                if (touch.identifier === lookTouchId) {
+                    const dx = x - lookPrev.x;
+                    const dy = y - lookPrev.y;
+                    yaw -= dx * 0.01104; 
+                    pitch = Math.max(-Math.PI / 2 + 0.01, Math.min(Math.PI / 2 - 0.01, pitch - (dy * 0.54) * 0.01104));
+                    lookPrev = { x: x, y: y };
+                    updateCameraRotation();
+                }
+            }
+        }
+
+        function onTouchEnd(e) {
+            for (let i = 0; i < e.changedTouches.length; i++) {
+                const touch = e.changedTouches[i];
+                activeTouches.delete(touch.identifier);
+            }
+
+            for (let i = 0; i < e.changedTouches.length; i++) {
+                const touch = e.changedTouches[i];
+                if (touch.identifier === moveTouchId) {
+                    moveTouchId = null;
+                    joyBase.style.display = 'none';
+                    moveVector = { x: 0, y: 0 };
+                }
+                if (touch.identifier === lookTouchId) {
+                    lookTouchId = null;
+                }
+            }
+        }
+
+        function onMouseDown(e) {
+            const overlay = document.getElementById('shader-editor-overlay');
+            if (overlay.style.display === 'flex' || currentMode === '2D' || e.target.closest('#config-panel') || e.target.closest('#hint-banner') || e.target.closest('#floating-toggle') || e.target.closest('#mode-switcher') || e.target.closest('#fullscreen-btn') || e.target.closest('#open-editor-btn') || e.target.closest('#shader-editor-overlay')) return;
+
+            if (desktopSiteMode) {
+                if (e.button === 0 && !document.pointerLockElement) {
+                    document.body.requestPointerLock();
+                    return;
+                }
+            } else {
+                if (e.clientX < window.innerWidth / 2) {
+                    joyCenter = { x: e.clientX, y: e.clientY };
+                    joyBase.style.left = `${e.clientX}px`;
+                    joyBase.style.top = `${e.clientY}px`;
+                    joyThumb.style.transform = `translate(-50%, -50%)`;
+                    joyBase.style.display = 'block';
+                    isMouseDown = true;
+                } else {
+                    lookPrev = { x: e.clientX, y: e.clientY };
+                    isMouseDown = true;
+                }
+            }
+        }
+
+        function onMouseMove(e) {
+            const overlay = document.getElementById('shader-editor-overlay');
+            if (overlay.style.display === 'flex' || currentMode === '2D') return;
+
+            if (desktopSiteMode && document.pointerLockElement === document.body) {
+                const dx = e.movementX || 0;
+                const dy = e.movementY || 0;
+                yaw -= dx * 0.003;
+                pitch = Math.max(-Math.PI / 2 + 0.01, Math.min(Math.PI / 2 - 0.01, pitch - dy * 0.003));
+                updateCameraRotation();
+                return;
+            }
+
+            if (!isMouseDown) return;
+
+            if (e.clientX < window.innerWidth / 2 && joyBase.style.display === 'block') {
+                let dx = e.clientX - joyCenter.x;
+                let dy = e.clientY - joyCenter.y;
+                let dist = Math.hypot(dx, dy);
+
+                if (dist > followThreshold) {
+                    const angle = Math.atan2(dy, dx);
+                    const overshot = dist - followThreshold;
+                    
+                    joyCenter.x += Math.cos(angle) * overshot;
+                    joyCenter.y += Math.sin(angle) * overshot;
+                    joyBase.style.left = `${joyCenter.x}px`;
+                    joyBase.style.top = `${joyCenter.y}px`;
+                    
+                    dx = e.clientX - joyCenter.x;
+                    dy = e.clientY - joyCenter.y;
+                    dist = Math.hypot(dx, dy);
+                }
+
+                if (dist > maxRadius) {
+                    const angle = Math.atan2(dy, dx);
+                    dx = Math.cos(angle) * maxRadius;
+                    dy = Math.sin(angle) * maxRadius;
+                }
+
+                joyThumb.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+                moveVector = { x: dx / maxRadius, y: dy / maxRadius };
+            } else {
+                const dx = e.clientX - lookPrev.x;
+                const dy = e.clientY - lookPrev.y;
+                yaw -= dx * 0.01104; 
+                pitch = Math.max(-Math.PI / 2 + 0.01, Math.min(Math.PI / 2 - 0.01, pitch - (dy * 0.54) * 0.01104));
+                lookPrev = { x: e.clientX, y: e.frontend };
+                updateCameraRotation();
+            }
+        }
+
+        function onMouseUp() {
+            isMouseDown = false;
+            joyBase.style.display = 'none';
+            moveVector = { x: 0, y: 0 };
+        }
+
+        function onMouseWheel(e) {
+            const overlay = document.getElementById('shader-editor-overlay');
+            if (overlay.style.display === 'flex' || currentMode === '2D' || e.target.closest('#config-panel')) return;
+            
+            const zoomSpeed = 0.005;
+            const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+            camera.position.addScaledVector(forward, -e.deltaY * zoomSpeed);
+        }
+
+        function updateCameraRotation() {
+            const euler = new THREE.Euler(pitch, yaw, 0, 'YXZ');
+            camera.quaternion.setFromEuler(euler);
+        }
+
+        function updateCameraMovement() {
+            let forwardAmount = -moveVector.y;
+            let strafeAmount = moveVector.x;
+
+            if (keyboardState.w) forwardAmount += 1.0;
+            if (keyboardState.s) forwardAmount -= 1.0;
+            if (keyboardState.a) strafeAmount -= 1.0;
+            if (keyboardState.d) strafeAmount += 1.0;
+
+            if (forwardAmount === 0 && strafeAmount === 0) return;
+
+            const moveSpeed = 0.152; 
+            const stepForward = forwardAmount * moveSpeed;
+            const stepStrafe = strafeAmount * moveSpeed;
+
+            const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+            const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
+            right.y = 0;
+            right.normalize();
+
+            camera.position.addScaledVector(forward, stepForward);
+            camera.position.addScaledVector(right, stepStrafe);
+        }
+
+        function updateFps() {
+            frameCount++;
+            const now = performance.now();
+            if (now - lastFpsTime >= 1000) {
+                const fps = Math.round((frameCount * 1000) / (now - lastFpsTime));
+                fpsElement.textContent = `FPS: ${fps}`;
+                frameCount = 0;
+                lastFpsTime = now;
+            }
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if (fpsEnabled) updateFps();
+
+            if (currentMode === '3D') {
+                groundMaterial.uniforms.uCameraPosition.value.copy(camera.position);
+                cubeMaterial.uniforms.uCameraPosition.value.copy(camera.position);
+                postMaterial.uniforms.uCameraPosition.value.copy(camera.position);
+
+                updateCameraMovement();
+
+                renderer.setRenderTarget(renderTarget);
+                renderer.render(scene, camera);
+
+                renderer.setRenderTarget(null);
+                renderer.render(postScene, postCamera);
+            } else {
+                if (canvasMaterial && canvasMaterial.uniforms.uTime) {
+                    canvasMaterial.uniforms.uTime.value = (performance.now() - startTime) * 0.001;
+                }
+                renderer.setRenderTarget(null);
+                renderer.render(canvasScene, canvasCamera);
+            }
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
