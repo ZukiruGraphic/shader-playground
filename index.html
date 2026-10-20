@@ -1678,8 +1678,9 @@
         }
 
         function onTouchStart(e) {
+            if (desktopSiteMode) return; // Nonaktifkan sentuhan joystick jika mode desktop aktif
             const overlay = document.getElementById('shader-editor-overlay');
-            if (desktopSiteMode || overlay.style.display === 'flex' || currentMode === '2D' || e.target.closest('#config-panel') || e.target.closest('#hint-banner') || e.target.closest('#floating-toggle') || e.target.closest('#mode-switcher') || e.target.closest('#fullscreen-btn') || e.target.closest('#open-editor-btn') || e.target.closest('#shader-editor-overlay')) return;
+            if (overlay.style.display === 'flex' || currentMode === '2D' || e.target.closest('#config-panel') || e.target.closest('#hint-banner') || e.target.closest('#floating-toggle') || e.target.closest('#mode-switcher') || e.target.closest('#fullscreen-btn') || e.target.closest('#open-editor-btn') || e.target.closest('#shader-editor-overlay')) return;
             e.preventDefault();
 
             for (let i = 0; i < e.changedTouches.length; i++) {
@@ -1709,8 +1710,9 @@
         }
 
         function onTouchMove(e) {
+            if (desktopSiteMode) return;
             const overlay = document.getElementById('shader-editor-overlay');
-            if (desktopSiteMode || overlay.style.display === 'flex' || currentMode === '2D' || e.target.closest('#config-panel') || e.target.closest('#hint-banner') || e.target.closest('#floating-toggle') || e.target.closest('#mode-switcher') || e.target.closest('#fullscreen-btn') || e.target.closest('#open-editor-btn') || e.target.closest('#shader-editor-overlay')) return;
+            if (overlay.style.display === 'flex' || currentMode === '2D' || e.target.closest('#config-panel') || e.target.closest('#hint-banner') || e.target.closest('#floating-toggle') || e.target.closest('#mode-switcher') || e.target.closest('#fullscreen-btn') || e.target.closest('#open-editor-btn') || e.target.closest('#shader-editor-overlay')) return;
             e.preventDefault();
 
             for (let i = 0; i < e.changedTouches.length; i++) {
@@ -1823,7 +1825,7 @@
 
             if (!isMouseDown) return;
 
-            if (e.clientX < window.innerWidth / 2 && joyBase.style.display === 'block') {
+            if (!desktopSiteMode && e.clientX < window.innerWidth / 2 && joyBase.style.display === 'block') {
                 let dx = e.clientX - joyCenter.x;
                 let dy = e.clientY - joyCenter.y;
                 let dist = Math.hypot(dx, dy);
