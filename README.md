@@ -16,7 +16,7 @@
 <!-- Badge Tombol Open ShaderPlay (Ikon Chrome Putih) -->
 <p>
   <a href="https://zukirugraphic.github.io/shader-playground/">
-    <img src="https://img.shields.io/badge/OPEN-SHADERPLAY-111111?style=for-the-badge&logo=google-chrome&logoColor=white&color=111111" alt="Open ShaderPlay">
+    <img src="https://img.shields.io/badge/OPEN-SHADERPLAY-555555?style=for-the-badge&logo=google-chrome&logoColor=white&color=1f883d" alt="Open ShaderPlay">
   </a>
 </p>
 
