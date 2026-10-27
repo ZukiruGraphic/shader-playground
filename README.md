@@ -2,7 +2,7 @@
 
 <img src="images/icon480x.png" width="160" alt="Shader Playground Logo">
 
-<h1 style="text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.6);">3D & 2D Shader Playground</h1>
+<h1 style="text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.6);">ShaderPlay</h1>
 
 ✨ *An interactive real-time WebGL & GLSL shader playground supporting both 3D and 2D canvas modes.* ✨
 
