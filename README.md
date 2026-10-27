@@ -16,12 +16,20 @@
 
 <p>
   <a href="https://zukirugraphic.github.io/shader-playground/">
-    <img src="https://img.shields.io/badge/🚀_Live_Demo-00ffcc?style=flat&logo=vercel" alt="Live Demo">
+    <img src="https://img.shields.io/badge/ShaderPlay-Live%20Demo-00ffcc?style=for-the-badge&logo=google-chrome&logoColor=black" alt="ShaderPlay">
   </a>
-  <a href="https://github.com/ZukiruGraphic/shader-playground">
-    <img src="https://img.shields.io/badge/📂_GitHub_Repository-black?style=flat&logo=github" alt="GitHub Repository">
+  <a href="https://ko-fi.com/zukirugraphic">
+    <img src="https://img.shields.io/badge/Ko--fi-Support%20Me-ff5e5b?style=flat&logo=kofi&logoColor=white" alt="Ko-fi">
   </a>
-</p>
+  <a href="https://youtube.com/@ZukiruGraphic">
+    <img src="https://img.shields.io/badge/YouTube-%40ZukiruGraphic-red?style=flat&logo=youtube&logoColor=white" alt="YouTube">
+  </a>
+  <a href="https://facebook.com/profile.php?id=100089040303933">
+    <img src="https://img.shields.io/badge/Facebook-Profile-1877F2?style=flat&logo=facebook&logoColor=white" alt="Facebook">
+  </a>
+  <a href="https://facebook.com/zukiru.kazen">
+    <img src="https://img.shields.io/badge/Facebook-Zukiru%20Kazen-1877F2?style=flat&logo=facebook&logoColor=white" alt="Facebook Kazen">
+  </a>
 
 </div>
 
