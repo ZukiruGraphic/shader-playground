@@ -1,9 +1,8 @@
 <div align="center">
 
-<!-- Ganti "icon.png" dengan nama file ikon/logo aplikasi Anda jika berbeda -->
 <img src="images/icon480x.png" width="160" alt="Shader Playground Logo">
 
-# 3D & 2D Shader Playground
+<h1 style="text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.6);">3D & 2D Shader Playground</h1>
 
 ✨ *An interactive real-time WebGL & GLSL shader playground supporting both 3D and 2D canvas modes.* ✨
 
@@ -14,10 +13,15 @@
   <img src="https://img.shields.io/badge/license-MIT-yellow" alt="License">
 </p>
 
+<!-- Badge Tombol Open ShaderPlay (Ikon Chrome Putih) -->
 <p>
   <a href="https://zukirugraphic.github.io/shader-playground/">
-    <img src="https://img.shields.io/badge/ShaderPlay-00ef77?style=for-the-badge&logo=google-chrome&logoColor=white" alt="ShaderPlay">
+    <img src="https://img.shields.io/badge/Open-ShaderPlay-00ffcc?style=for-the-badge&logo=google-chrome&logoColor=white" alt="Open ShaderPlay">
   </a>
+</p>
+
+<!-- Badge Sosial Media -->
+<p>
   <a href="https://ko-fi.com/zukirugraphic">
     <img src="https://img.shields.io/badge/Ko--fi-Support%20Me-ff5e5b?style=flat&logo=kofi&logoColor=white" alt="Ko-fi">
   </a>
@@ -30,6 +34,7 @@
   <a href="https://facebook.com/zukiru.kazen">
     <img src="https://img.shields.io/badge/Facebook-Zukiru%20Kazen-1877F2?style=flat&logo=facebook&logoColor=white" alt="Facebook Kazen">
   </a>
+</p>
 
 </div>
 
