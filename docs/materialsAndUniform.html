@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Materials & Uniforms Information - ShaderPlay</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background-color: #11141a;
+            color: #eee;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+        }
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background: rgba(20, 24, 30, 0.95);
+            border: 1px solid rgba(0, 255, 204, 0.4);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(0, 255, 204, 0.2);
+            padding-bottom: 12px;
+            margin-bottom: 16px;
+        }
+        .header h2 {
+            margin: 0;
+            font-size: 16px;
+            color: #00ffcc;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .back-btn {
+            background: rgba(255, 68, 68, 0.2);
+            border: 1px solid rgba(255, 68, 68, 0.5);
+            color: #ff8888;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            text-decoration: none;
+            transition: background 0.2s;
+        }
+        .back-btn:hover {
+            background: rgba(255, 68, 68, 0.35);
+        }
+        .back-btn svg {
+            width: 14px;
+            height: 14px;
+            fill: currentColor;
+        }
+        .content {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+        .info-section {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 6px;
+            padding: 12px;
+        }
+        .info-section h4 {
+            margin: 0 0 6px 0;
+            color: #00ffcc;
+            font-size: 13px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 4px;
+        }
+        .info-section code {
+            color: #ff99cc;
+            font-family: monospace;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="#00ffcc"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                Materials & Uniforms Information
+            </h2>
+            <a href="#" class="back-btn" id="back-to-preview">
+                <svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+                Back
+            </a>
+        </div>
+        <div class="content">
+            <div class="info-section">
+                <h4>📦 Custom 3D Textures (Global)</h4>
+                <p>All custom textures added in the <i>3D Textures & Uniforms</i> menu (e.g., <code>uTextureExtra0</code>) are automatically registered and ready to use across all 3D shaders below:</p>
+            </div>
+
+            <div class="info-section">
+                <h4>1. Cube Material (<code>shaders/cube.*</code>)</h4>
+                <p><b>Uniforms:</b> <code>sampler2D uTexture</code>, <code>vec2 uUvScale</code>, <code>vec3 uDirLightPos</code>, <code>vec3 uDirLightColor</code>, <code>vec3 uAmbientColor</code>, <code>vec3 uCameraPosition</code>, <code>vec3 uSpecularColor</code>, <code>float uSpecularPower</code>, <code>float uSpecularIntensity</code>, <code>float uAOStrength</code>, <code>vec3 uFogColor</code>, <code>float uFogNear</code>, <code>float uFogFar</code>, plus all custom 3D textures.</p>
+            </div>
+
+            <div class="info-section">
+                <h4>2. Ground Material (<code>shaders/ground.*</code>)</h4>
+                <p><b>Uniforms:</b> Identical to the Cube Material. Supports per-vertex <code>aAO</code> (Ambient Occlusion) modulation.</p>
+            </div>
+
+            <div class="info-section">
+                <h4>3. Post-Processing Material (<code>shaders/post.*</code>)</h4>
+                <p><b>Uniforms:</b> <code>sampler2D tDiffuse</code>, <code>sampler2D tDepth</code>, <code>sampler2D tNormal</code>, <code>float uCameraNear</code>, <code>float uCameraFar</code>, <code>float uVignetteIntensity</code>, <code>float uVignetteRoundness</code>, <code>vec3 uSunPosition</code>, <code>vec3 uDirLightPos</code>, <code>vec3 uCameraPosition</code>, plus all custom 3D textures.</p>
+            </div>
+
+            <div class="info-section">
+                <h4>4. Sky Material (<code>shaders/sky.*</code>)</h4>
+                <p><b>Uniforms:</b> <code>vec3 uSunPosition</code>, plus all custom 3D textures.</p>
+            </div>
+
+            <div class="info-section">
+                <h4>5. Normal Material (Internal Buffer)</h4>
+                <p>Used to render absolute World Normals (X=Red, Y=Green, Z=Blue) into the <code>tNormal</code> render target. Calculates static <code>mat3(modelMatrix) * normal</code>.</p>
+            </div>
+
+            <div class="info-section">
+                <h4>6. 2D Canvas Material (<code>shaders/canvas.*</code>)</h4>
+                <p><b>Uniforms:</b> <code>float uTime</code>, <code>vec2 uResolution</code>, plus custom 2D textures (<code>uTexture0</code>, <code>uTexture1</code>, etc.).</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('back-to-preview').addEventListener('click', (e) => {
+            e.preventDefault();
+            window.location.replace('../index.html');
+        });
+    </script>
+</body>
+</html>

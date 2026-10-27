@@ -61,7 +61,6 @@
             transform: scale(0.92);
         }
 
-        /* Hint ESC dibawah tombol setting */
         .btn-hint-bottom {
             margin-top: 5px;
             background: rgba(20, 24, 30, 0.85);
@@ -74,6 +73,7 @@
             border-radius: 4px;
             pointer-events: none;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            transition: opacity 0.2s ease;
         }
 
         .fullscreen-container {
@@ -113,7 +113,6 @@
             pointer-events: none;
         }
 
-        /* Hint F11 diatas tombol fullscreen */
         .btn-hint-top {
             margin-bottom: 5px;
             background: rgba(20, 24, 30, 0.85);
@@ -128,7 +127,6 @@
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
         }
 
-        /* Fully covering semi-transparent background for the shader editor overlay */
         #shader-editor-overlay {
             position: fixed;
             top: 0;
@@ -257,7 +255,6 @@
             resize: none !important;
         }
 
-        /* Custom Scrollbar Styling for Textarea */
         #shader-code-textarea::-webkit-scrollbar {
             width: 8px;
             height: 8px;
@@ -280,7 +277,6 @@
             display: none;
         }
 
-        /* Circular Reload Shaders Button at bottom-right of editing screen */
         #reload-shaders-btn {
             position: absolute;
             bottom: 20px;
@@ -457,6 +453,7 @@
             justify-content: center;
             gap: 6px;
             transition: background 0.2s;
+            text-decoration: none;
         }
         .btn-primary:hover {
             background: rgba(0, 255, 204, 0.35);
@@ -468,7 +465,6 @@
             flex-shrink: 0;
         }
 
-        /* Inline Custom Confirmation Box */
         #reset-confirm-box {
             display: none;
             flex-direction: column;
@@ -502,7 +498,6 @@
             color: #ddd;
         }
 
-        /* Hint Message Banner */
         #hint-banner {
             position: absolute;
             bottom: 20px;
@@ -656,10 +651,9 @@
     <div id="fps-counter">FPS: 60</div>
     <div id="shader-error-banner"></div>
 
-    <!-- Floating Toggle & ESC Hint container -->
     <div class="floating-container">
         <div id="floating-toggle">☰</div>
-        <div class="btn-hint-bottom">ESC</div>
+        <div class="btn-hint-bottom" id="esc-hint">ESC</div>
     </div>
 
     <button id="open-editor-btn" title="Edit Shader">
@@ -668,7 +662,6 @@
         </svg>
     </button>
 
-    <!-- Platform-Smart Hint Message Banner -->
     <div id="hint-banner">
         <span id="hint-text">Loading instructions...</span>
         <button id="hint-close-btn" title="Close Hint">✕</button>
@@ -680,7 +673,6 @@
             <button class="editor-close-btn" id="close-editor-btn">Close ✕</button>
         </div>
         <div id="editor-body">
-            <!-- Rendered dynamically -->
             <button id="reload-shaders-btn" title="Reload Shaders">
                 <svg viewBox="0 0 24 24">
                     <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
@@ -694,7 +686,6 @@
         <button class="mode-btn" id="btn-2d">2D</button>
     </div>
 
-    <!-- Fullscreen & F11 Hint container -->
     <div class="fullscreen-container">
         <div class="btn-hint-top">F11</div>
         <div id="fullscreen-btn" title="Toggle Fullscreen">
@@ -705,12 +696,6 @@
     </div>
 
     <div id="config-panel">
-        <!-- Desktop Site Mode Toggle Switch -->
-        <div class="checkbox-group" style="border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px; margin-bottom: 4px;">
-            <span>Desktop Site Mode</span>
-            <input type="checkbox" id="toggle-desktop-site">
-        </div>
-
         <div id="lighting-controls" style="display: flex; flex-direction: column; gap: 12px;">
             <div class="control-group">
                 <label>Light Height (Y): <span id="val-light-y">40.0</span></label>
@@ -721,6 +706,12 @@
                 <label>Light Rotation (°): <span id="val-light-rot">35°</span></label>
                 <input type="range" id="slider-light-rot" min="0" max="360" step="1" value="35">
             </div>
+        </div>
+
+        <div id="texture-controls-3d" style="display: flex; flex-direction: column; gap: 8px;">
+            <div style="font-weight:bold; color:#00ffcc; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:4px;">3D Textures & Uniforms</div>
+            <div id="texture-slots-container-3d" style="display: flex; flex-direction: column; gap: 6px;"></div>
+            <button class="btn-primary" id="btn-add-texture-3d">+ Add Image Texture</button>
         </div>
 
         <div id="texture-controls" style="display:none; flex-direction: column; gap: 8px;">
@@ -766,20 +757,31 @@
                 </div>
             </div>
         </div>
+
+        <div class="control-group" style="margin-top: 2px;">
+            <button class="btn-primary" id="btn-info-materials" style="border-color: rgba(0, 255, 204, 0.6); color: #00ffcc; background: rgba(0, 255, 204, 0.15);">
+                <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                materials/uniforms
+            </button>
+        </div>
+
+        <div class="control-group" id="install-app-container" style="margin-top: 6px; display: none;">
+            <button class="btn-primary" id="btn-install-app" style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <img src="images/icon.png" alt="App Icon" style="width: 16px; height: 16px; border-radius: 3px;">
+                Install WebApp
+            </button>
+        </div>
     </div>
 
     <div id="joystick-base">
         <div id="joystick-thumb"></div>
     </div>
 
-    <!-- Three.js Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <!-- JSZip Library for Zipping Shaders -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.2/jszip.min.js"></script>
 
     <script>
         let currentMode = localStorage.getItem('appMode') || '3D';
-        let desktopSiteMode = localStorage.getItem('desktopSiteMode') === 'true';
 
         let camera, scene, renderer;
         let cube, ground, skyMesh;
@@ -797,7 +799,12 @@
             { name: "uTexture0", url: null }
         ];
 
-        let renderTarget, postScene, postCamera, postMaterial;
+        let customTexturesData3D = JSON.parse(localStorage.getItem('customTexturesData3D')) || [
+            { name: "uTextureExtra0", url: null }
+        ];
+
+        let renderTarget, normalRenderTarget, postScene, postCamera, postMaterial;
+        let normalMaterial;
 
         let lightDistance = 50;
         let lightHeight = localStorage.getItem('lightHeight') !== null ? parseFloat(localStorage.getItem('lightHeight')) : 40;
@@ -806,6 +813,8 @@
         const dirLightPos = new THREE.Vector3();
         const dirLightColor = new THREE.Color(0xffffff);
         const ambientColor = new THREE.Color(0x707070);
+
+        const fogColor = new THREE.Color(0.7, 0.8, 0.95);
 
         let currentResScale = localStorage.getItem('currentResScale') !== null ? parseFloat(localStorage.getItem('currentResScale')) : 2.0;
 
@@ -895,7 +904,7 @@
                 lightHeight,
                 Math.sin(rad) * lightDistance
             );
-
+            
             if (dirLight) dirLight.position.copy(dirLightPos);
         }
 
@@ -904,6 +913,7 @@
             const height = Math.max(1, Math.floor(window.innerHeight * currentResScale));
 
             if (renderTarget) renderTarget.dispose();
+            if (normalRenderTarget) normalRenderTarget.dispose();
 
             renderTarget = new THREE.WebGLRenderTarget(width, height, {
                 minFilter: THREE.LinearFilter,
@@ -911,12 +921,52 @@
                 generateMipmaps: false
             });
 
+            renderTarget.depthTexture = new THREE.DepthTexture();
+            renderTarget.depthTexture.type = THREE.UnsignedIntType;
+            renderTarget.depthTexture.minFilter = THREE.NearestFilter;
+            renderTarget.depthTexture.magFilter = THREE.NearestFilter;
+
+            normalRenderTarget = new THREE.WebGLRenderTarget(width, height, {
+                minFilter: THREE.NearestFilter,
+                magFilter: THREE.NearestFilter,
+                format: THREE.RGBAFormat,
+                type: THREE.UnsignedByteType,
+                generateMipmaps: false
+            });
+
             if (postMaterial) {
                 postMaterial.uniforms.tDiffuse.value = renderTarget.texture;
+                postMaterial.uniforms.tDepth.value = renderTarget.depthTexture;
+                postMaterial.uniforms.tNormal.value = normalRenderTarget.texture;
             }
             if (canvasMaterial && canvasMaterial.uniforms.uResolution) {
                 canvasMaterial.uniforms.uResolution.value.set(width, height);
             }
+        }
+
+        function rebuild3DMaterialUniforms() {
+            const materials3D = [cubeMaterial, groundMaterial, postMaterial, skyMesh ? skyMesh.material : null, normalMaterial];
+            const extraUniforms = {};
+            const textureLoader = new THREE.TextureLoader();
+
+            customTexturesData3D.forEach((item) => {
+                if (item.url) {
+                    const tex = textureLoader.load(item.url);
+                    tex.minFilter = THREE.LinearFilter;
+                    tex.magFilter = THREE.LinearFilter;
+                    extraUniforms[item.name] = { value: tex };
+                } else {
+                    extraUniforms[item.name] = { value: null };
+                }
+            });
+
+            materials3D.forEach(mat => {
+                if (!mat) return;
+                Object.keys(extraUniforms).forEach(key => {
+                    mat.uniforms[key] = extraUniforms[key];
+                });
+                mat.needsUpdate = true;
+            });
         }
 
         function rebuildCanvasMaterialUniforms() {
@@ -985,6 +1035,23 @@
                 dirLight.position.copy(dirLightPos);
                 scene.add(dirLight);
 
+                normalMaterial = new THREE.ShaderMaterial({
+                    vertexShader: `
+                        varying vec3 vNormal;
+                        void main() {
+                            vNormal = normalize(mat3(modelMatrix) * normal);
+                            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                        }
+                    `,
+                    fragmentShader: `
+                        varying vec3 vNormal;
+                        void main() {
+                            vec3 norm = normalize(vNormal);
+                            gl_FragColor = vec4(norm * 0.5 + 0.5, 1.0);
+                        }
+                    `
+                });
+
                 const fallbackGroundTex = createTileCanvasTexture('#222222', '#ffffff');
                 const fallbackCubeTex = createTileCanvasTexture('#1e242b', '#ffffff');
 
@@ -1001,7 +1068,10 @@
                         uSpecularColor: { value: new THREE.Color(1.0, 1.0, 1.0) },
                         uSpecularPower: { value: 16.0 },
                         uSpecularIntensity: { value: 0.55 },
-                        uAOStrength: { value: 0.2 }
+                        uAOStrength: { value: 0.2 },
+                        uFogColor: { value: fogColor },
+                        uFogNear: { value: 8.0 },
+                        uFogFar: { value: 55.0 }
                     }
                 });
 
@@ -1018,7 +1088,10 @@
                         uSpecularColor: { value: new THREE.Color(1.0, 1.0, 1.0) },
                         uSpecularPower: { value: 64.0 },
                         uSpecularIntensity: { value: 0.4 },
-                        uAOStrength: { value: 1.0 }
+                        uAOStrength: { value: 1.0 },
+                        uFogColor: { value: fogColor },
+                        uFogNear: { value: 8.0 },
+                        uFogFar: { value: 55.0 }
                     }
                 });
 
@@ -1093,7 +1166,6 @@
                 };
 
                 document.body.appendChild(renderer.domElement);
-                updateRenderTargetResolution();
 
                 postScene = new THREE.Scene();
                 postCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
@@ -1101,28 +1173,31 @@
                     vertexShader: shaderSources['shaders/post.vert'],
                     fragmentShader: shaderSources['shaders/post.frag'],
                     uniforms: {
-                        tDiffuse: { value: renderTarget.texture },
+                        tDiffuse: { value: null },
+                        tDepth: { value: null },
+                        tNormal: { value: null },
+                        uCameraNear: { value: camera.near },
+                        uCameraFar: { value: camera.far },
                         uVignetteIntensity: { value: 0.2 },
                         uVignetteRoundness: { value: 0.6 },
                         uSunPosition: { value: dirLightPos },
+                        uDirLightPos: { value: dirLightPos },
                         uCameraPosition: { value: camera.position }
                     }
                 });
                 postScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), postMaterial));
 
+                updateRenderTargetResolution();
+                rebuild3DMaterialUniforms();
+
                 setupUI();
                 setupGlobalKeyboardShortcuts();
 
-                // Platform Hint based on Desktop Site Setting checkbox & 10-second timer with robust click/touch closing
                 const hintBanner = document.getElementById('hint-banner');
                 const hintText = document.getElementById('hint-text');
                 const hintCloseBtn = document.getElementById('hint-close-btn');
 
-                if (desktopSiteMode) {
-                    hintText.innerHTML = "💡 <b>Desktop Site Controls:</b> Use <b>WASD</b> to move, Click to lock mouse/look, <b>F11</b> Fullscreen, <b>Esc</b> Settings.";
-                } else {
-                    hintText.innerHTML = "📱 <b>Mobile Controls:</b> Use left virtual joystick to move, right screen drag to look around.";
-                }
+                hintText.innerHTML = "📱 <b>Controls:</b> Use left virtual joystick to move, right screen drag to look around.";
 
                 const hintTimer = setTimeout(() => {
                     if (hintBanner) hintBanner.style.display = 'none';
@@ -1176,12 +1251,15 @@
                     } else {
                         const panel = document.getElementById('config-panel');
                         const toggleBtn = document.getElementById('floating-toggle');
+                        const escHint = document.getElementById('esc-hint');
                         if (panel.style.display === 'flex') {
                             panel.style.display = 'none';
                             toggleBtn.textContent = '☰';
+                            escHint.style.display = 'block'; 
                         } else {
                             panel.style.display = 'flex';
                             toggleBtn.textContent = '×';
+                            escHint.style.display = 'none'; 
                         }
                     }
                     if (document.pointerLockElement) {
@@ -1398,21 +1476,84 @@
 
         function updateUIModeVisibility() {
             const lightingControls = document.getElementById('lighting-controls');
+            const textureControls3D = document.getElementById('texture-controls-3d');
             const textureControls = document.getElementById('texture-controls');
             const btn3d = document.getElementById('btn-3d');
             const btn2d = document.getElementById('btn-2d');
 
             if (currentMode === '2D') {
                 lightingControls.style.display = 'none';
+                textureControls3D.style.display = 'none';
                 textureControls.style.display = 'flex';
                 btn2d.classList.add('active');
                 btn3d.classList.remove('active');
             } else {
                 lightingControls.style.display = 'flex';
+                textureControls3D.style.display = 'flex';
                 textureControls.style.display = 'none';
                 btn3d.classList.add('active');
                 btn2d.classList.remove('active');
             }
+        }
+
+        function renderTextureSlotsUI3D() {
+            const container = document.getElementById('texture-slots-container-3d');
+            container.innerHTML = '';
+
+            customTexturesData3D.forEach((item, index) => {
+                const slotDiv = document.createElement('div');
+                slotDiv.className = 'texture-slot';
+                slotDiv.innerHTML = `
+                    <div class="texture-slot-header">
+                        <span style="font-size:10px; color:#aaa;">Slot #${index}</span>
+                        <button class="btn-danger btn-danger-3d" data-index="${index}">Remove</button>
+                    </div>
+                    <div class="control-group">
+                        <label>Uniform Name:</label>
+                        <input type="text" class="uniform-name-input-3d" data-index="${index}" value="${item.name}">
+                    </div>
+                    <div class="control-group">
+                        <label>Image File:</label>
+                        <input type="file" class="texture-file-input-3d" data-index="${index}" accept="image/*" style="font-size:10px; color:#aaa;">
+                    </div>
+                `;
+                container.appendChild(slotDiv);
+            });
+
+            container.querySelectorAll('.btn-danger-3d').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const idx = parseInt(e.target.getAttribute('data-index'));
+                    customTexturesData3D.splice(idx, 1);
+                    localStorage.setItem('customTexturesData3D', JSON.stringify(customTexturesData3D));
+                    renderTextureSlotsUI3D();
+                    rebuild3DMaterialUniforms();
+                });
+            });
+
+            container.querySelectorAll('.uniform-name-input-3d').forEach(input => {
+                input.addEventListener('input', (e) => {
+                    const idx = parseInt(e.target.getAttribute('data-index'));
+                    customTexturesData3D[idx].name = e.target.value.trim();
+                    localStorage.setItem('customTexturesData3D', JSON.stringify(customTexturesData3D));
+                    rebuild3DMaterialUniforms();
+                });
+            });
+
+            container.querySelectorAll('.texture-file-input-3d').forEach(input => {
+                input.addEventListener('change', (e) => {
+                    const idx = parseInt(e.target.getAttribute('data-index'));
+                    const file = e.target.files[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = function(uploadEvent) {
+                            customTexturesData3D[idx].url = uploadEvent.target.result;
+                            localStorage.setItem('customTexturesData3D', JSON.stringify(customTexturesData3D));
+                            rebuild3DMaterialUniforms();
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+            });
         }
 
         function renderTextureSlotsUI() {
@@ -1478,13 +1619,21 @@
         function setupUI() {
             const panel = document.getElementById('config-panel');
             const toggleBtn = document.getElementById('floating-toggle');
+            const escHint = document.getElementById('esc-hint');
             const fullscreenBtn = document.getElementById('fullscreen-btn');
             const openEditorBtn = document.getElementById('open-editor-btn');
             const closeEditorBtn = document.getElementById('close-editor-btn');
             const reloadShadersBtn = document.getElementById('reload-shaders-btn');
 
             updateUIModeVisibility();
+            renderTextureSlotsUI3D();
             renderTextureSlotsUI();
+
+            // Tombol Navigasi ke halaman Materials & Uniforms menggunakan location.replace agar history bersih
+            document.getElementById('btn-info-materials').addEventListener('click', (e) => {
+                e.preventDefault();
+                window.location.replace('docs/materialsAndUniform.html');
+            });
 
             openEditorBtn.addEventListener('click', openShaderEditor);
             openEditorBtn.addEventListener('touchend', openShaderEditor, { passive: false });
@@ -1500,6 +1649,13 @@
             reloadShadersBtn.addEventListener('click', handleReloadAction);
             reloadShadersBtn.addEventListener('touchend', handleReloadAction, { passive: false });
 
+            document.getElementById('btn-add-texture-3d').addEventListener('click', () => {
+                customTexturesData3D.push({ name: `uTextureExtra${customTexturesData3D.length}`, url: null });
+                localStorage.setItem('customTexturesData3D', JSON.stringify(customTexturesData3D));
+                renderTextureSlotsUI3D();
+                rebuild3DMaterialUniforms();
+            });
+
             document.getElementById('btn-add-texture').addEventListener('click', () => {
                 customTexturesData.push({ name: `uTexture${customTexturesData.length}`, url: null });
                 localStorage.setItem('customTexturesData', JSON.stringify(customTexturesData));
@@ -1507,7 +1663,6 @@
                 rebuildCanvasMaterialUniforms();
             });
 
-            // Download Zip Bundle Button Listener
             document.getElementById('btn-download-zip').addEventListener('click', async () => {
                 if (typeof JSZip === 'undefined') {
                     alert('JSZip library is still loading or failed to connect.');
@@ -1558,7 +1713,6 @@
                 }
             });
 
-            // Custom Inline Reset Confirmation UI Handling
             const resetBtn = document.getElementById('btn-reset-shaders');
             const confirmBox = document.getElementById('reset-confirm-box');
             const confirmYes = document.getElementById('btn-confirm-yes');
@@ -1579,13 +1733,40 @@
                 window.location.reload();
             });
 
-            // Desktop Site Mode Checkbox Binding
-            const toggleDesktopSite = document.getElementById('toggle-desktop-site');
-            toggleDesktopSite.checked = desktopSiteMode;
-            toggleDesktopSite.addEventListener('change', (e) => {
-                desktopSiteMode = e.target.checked;
-                localStorage.setItem('desktopSiteMode', desktopSiteMode);
-                window.location.reload();
+            let deferredPrompt = null;
+            const installContainer = document.getElementById('install-app-container');
+            const installBtn = document.getElementById('btn-install-app');
+
+            window.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault();
+                deferredPrompt = e;
+                if (installContainer) {
+                    installContainer.style.display = 'flex';
+                }
+            });
+
+            if (installBtn) {
+                installBtn.addEventListener('click', async () => {
+                    if (deferredPrompt) {
+                        deferredPrompt.prompt();
+                        const { outcome } = await deferredPrompt.userChoice;
+                        if (outcome === 'accepted') {
+                            console.log('User accepted the install prompt');
+                        }
+                        deferredPrompt = null;
+                        if (installContainer) {
+                            installContainer.style.display = 'none';
+                        }
+                    }
+                });
+            }
+
+            window.addEventListener('appinstalled', () => {
+                if (installContainer) {
+                    installContainer.style.display = 'none';
+                }
+                deferredPrompt = null;
+                console.log('PWA was installed');
             });
 
             const sliderY = document.getElementById('slider-light-y');
@@ -1607,15 +1788,18 @@
 
             panel.style.display = 'none';
             toggleBtn.textContent = '☰';
+            escHint.style.display = 'block';
 
             toggleBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 if (panel.style.display === 'none' || panel.style.display === '') {
                     panel.style.display = 'flex';
                     toggleBtn.textContent = '×';
+                    escHint.style.display = 'none'; 
                 } else {
                     panel.style.display = 'none';
                     toggleBtn.textContent = '☰';
+                    escHint.style.display = 'block'; 
                 }
             });
 
@@ -1681,7 +1865,6 @@
         }
 
         function onTouchStart(e) {
-            if (desktopSiteMode) return; // Nonaktifkan sentuhan joystick jika mode desktop aktif
             const overlay = document.getElementById('shader-editor-overlay');
             if (overlay.style.display === 'flex' || currentMode === '2D' || e.target.closest('#config-panel') || e.target.closest('#hint-banner') || e.target.closest('#floating-toggle') || e.target.closest('#mode-switcher') || e.target.closest('#fullscreen-btn') || e.target.closest('#open-editor-btn') || e.target.closest('#shader-editor-overlay')) return;
             e.preventDefault();
@@ -1713,7 +1896,6 @@
         }
 
         function onTouchMove(e) {
-            if (desktopSiteMode) return;
             const overlay = document.getElementById('shader-editor-overlay');
             if (overlay.style.display === 'flex' || currentMode === '2D' || e.target.closest('#config-panel') || e.target.closest('#hint-banner') || e.target.closest('#floating-toggle') || e.target.closest('#mode-switcher') || e.target.closest('#fullscreen-btn') || e.target.closest('#open-editor-btn') || e.target.closest('#shader-editor-overlay')) return;
             e.preventDefault();
@@ -1793,23 +1975,16 @@
             const overlay = document.getElementById('shader-editor-overlay');
             if (overlay.style.display === 'flex' || currentMode === '2D' || e.target.closest('#config-panel') || e.target.closest('#hint-banner') || e.target.closest('#floating-toggle') || e.target.closest('#mode-switcher') || e.target.closest('#fullscreen-btn') || e.target.closest('#open-editor-btn') || e.target.closest('#shader-editor-overlay')) return;
 
-            if (desktopSiteMode) {
-                if (e.button === 0 && !document.pointerLockElement) {
-                    document.body.requestPointerLock();
-                    return;
-                }
+            if (e.clientX < window.innerWidth / 2) {
+                joyCenter = { x: e.clientX, y: e.clientY };
+                joyBase.style.left = `${e.clientX}px`;
+                joyBase.style.top = `${e.clientY}px`;
+                joyThumb.style.transform = `translate(-50%, -50%)`;
+                joyBase.style.display = 'block';
+                isMouseDown = true;
             } else {
-                if (e.clientX < window.innerWidth / 2) {
-                    joyCenter = { x: e.clientX, y: e.clientY };
-                    joyBase.style.left = `${e.clientX}px`;
-                    joyBase.style.top = `${e.clientY}px`;
-                    joyThumb.style.transform = `translate(-50%, -50%)`;
-                    joyBase.style.display = 'block';
-                    isMouseDown = true;
-                } else {
-                    lookPrev = { x: e.clientX, y: e.clientY };
-                    isMouseDown = true;
-                }
+                lookPrev = { x: e.clientX, y: e.clientY };
+                isMouseDown = true;
             }
         }
 
@@ -1817,18 +1992,9 @@
             const overlay = document.getElementById('shader-editor-overlay');
             if (overlay.style.display === 'flex' || currentMode === '2D') return;
 
-            if (desktopSiteMode && document.pointerLockElement === document.body) {
-                const dx = e.movementX || 0;
-                const dy = e.movementY || 0;
-                yaw -= dx * 0.0045;
-                pitch = Math.max(-Math.PI / 2 + 0.01, Math.min(Math.PI / 2 - 0.01, pitch - dy * 0.0045));
-                updateCameraRotation();
-                return;
-            }
-
             if (!isMouseDown) return;
 
-            if (!desktopSiteMode && e.clientX < window.innerWidth / 2 && joyBase.style.display === 'block') {
+            if (e.clientX < window.innerWidth / 2 && joyBase.style.display === 'block') {
                 let dx = e.clientX - joyCenter.x;
                 let dy = e.clientY - joyCenter.y;
                 let dist = Math.hypot(dx, dy);
@@ -1931,8 +2097,17 @@
 
                 updateCameraMovement();
 
+                skyMesh.visible = true;
                 renderer.setRenderTarget(renderTarget);
                 renderer.render(scene, camera);
+
+                skyMesh.visible = false;
+                scene.overrideMaterial = normalMaterial;
+                renderer.setRenderTarget(normalRenderTarget);
+                renderer.render(scene, camera);
+                
+                scene.overrideMaterial = null;
+                skyMesh.visible = true;
 
                 renderer.setRenderTarget(null);
                 renderer.render(postScene, postCamera);

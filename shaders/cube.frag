@@ -7,6 +7,11 @@ uniform vec3 uSpecularColor;
 uniform float uSpecularPower;
 uniform float uSpecularIntensity;
 uniform float uAOStrength;
+
+uniform vec3 uFogColor;
+uniform float uFogNear;
+uniform float uFogFar;
+
 varying float vAO;
 varying vec2 vUv;
 varying vec3 vWorldNormal;
@@ -29,8 +34,12 @@ void main() {
     vec3 specular = uSpecularColor * spec * uSpecularIntensity * NdotL;
     
     vec3 finalColor = texColor.rgb * (uAmbientColor + diffuse) + specular;
-    
     finalColor *= aoEffect;
-    
-    gl_FragColor = vec4(finalColor, gl_FragCoord.z);
+
+    float dist = length(uCameraPosition - vWorldPosition);
+    float fogFactor = clamp((dist - uFogNear) / (uFogFar - uFogNear), 0.0, 1.0);
+
+    finalColor = mix(finalColor, uFogColor, fogFactor);
+
+    gl_FragColor = vec4(finalColor, 1.0);
 }
