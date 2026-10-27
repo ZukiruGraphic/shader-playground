@@ -16,7 +16,7 @@
 
 <p>
   <a href="https://zukirugraphic.github.io/shader-playground/">
-    <img src="https://img.shields.io/badge/ShaderPlay-Live%20Demo-00ffcc?style=for-the-badge&logo=google-chrome&logoColor=black" alt="ShaderPlay">
+    <img src="https://img.shields.io/badge/ShaderPlay-00ef77?style=for-the-badge&logo=google-chrome&logoColor=white" alt="ShaderPlay">
   </a>
   <a href="https://ko-fi.com/zukirugraphic">
     <img src="https://img.shields.io/badge/Ko--fi-Support%20Me-ff5e5b?style=flat&logo=kofi&logoColor=white" alt="Ko-fi">
