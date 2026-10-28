@@ -360,6 +360,13 @@
             gap: 12px;
             padding: 12px;
             pointer-events: auto;
+            touch-action: pan-y; /* <-- Diperbaiki: Mengizinkan touch scrolling vertikal */
+            -webkit-overflow-scrolling: touch; /* <-- Smooth scrolling untuk perangkat seluler */
+        }
+
+        /* <-- Diperbaiki: Memastikan elemen-elemen di dalam config-panel ikut mendukung interaksi sentuh / scroll */
+        #config-panel * {
+            touch-action: pan-y;
         }
 
         .control-group {
@@ -1629,7 +1636,6 @@
             renderTextureSlotsUI3D();
             renderTextureSlotsUI();
 
-            // Tombol Navigasi ke halaman Materials & Uniforms menggunakan location.replace agar history bersih
             document.getElementById('btn-info-materials').addEventListener('click', (e) => {
                 e.preventDefault();
                 window.location.replace('docs/materialsAndUniform.html');
